@@ -36,7 +36,7 @@ class WhatsAppBotApp:
         self.scrollbar_x.grid(row=2, column=0, columnspan=3, sticky='ew')
 
         self.top_frame = tk.Frame(root)
-        self.top_frame.grid(row=0, column=0, columnspan=4, sticky='ew')
+        self.top_frame.grid(row=0, column=0, columnspan=4, sticky='ew', padx=10, pady=10)
 
         self.add_column_button = tk.Button(self.top_frame, text="Adicionar Coluna", background='white', font='Montserrat', foreground='black', command=self.show_add_column_dialog)
         self.add_column_button.pack(side=tk.LEFT)
@@ -51,10 +51,10 @@ class WhatsAppBotApp:
         self.remove_row_button.pack(side=tk.LEFT)
 
         self.bottom_frame = tk.Frame(root)
-        self.bottom_frame.grid(row=3, column=0, columnspan=4, sticky='ew')
-
-        self.message_entry = tk.Entry(self.bottom_frame, width=80)
-        self.message_entry.pack(side=tk.LEFT, padx=5, pady=5)
+        self.bottom_frame.grid(row=3, column=0, columnspan=4, sticky='ew', padx=10, pady=10)
+        
+        self.message_entry = tk.Text(self.bottom_frame, width=80, height=5)  # Ajuste a altura aqui
+        self.message_entry.pack(side=tk.LEFT, padx=10, pady=10)
 
         self.send_button = tk.Button(self.bottom_frame, text="Enviar Mensagens", font='Montserrat', background='#33CC33', command=self.send_messages)
         self.send_button.pack(side=tk.RIGHT, padx=5, pady=5)
@@ -68,9 +68,10 @@ class WhatsAppBotApp:
     def clear_sheet(self):
         confirm = messagebox.askyesno("Confirmar", "Tem certeza que deseja limpar toda a planilha? Isso excluirá todas as colunas e linhas.")
         if confirm:
-            self.df = pd.DataFrame()  # Cria um DataFrame vazio
-            self.update_treeview_columns()
+            self.df = pd.DataFrame()
+            self.df['telefone'] = ''
             self.load_treeview()
+            self.update_treeview_columns()
             self.data_handler.save_data(self.df)
             self.remove_column_button.config(state=tk.DISABLED)
             self.remove_row_button.config(state=tk.DISABLED)
@@ -249,7 +250,7 @@ class WhatsAppBotApp:
         self.data_handler.save_data(self.df)
 
     def send_messages(self):
-        mensagem_template = self.message_entry.get().strip()
+        mensagem_template = self.message_entry.get("1.0", tk.END).strip()
         if not mensagem_template:
             messagebox.showwarning("Atenção", "A mensagem não pode estar vazia.")
             return
@@ -273,7 +274,6 @@ class WhatsAppBotApp:
                 print(f'Não foi possível enviar mensagem para {row["nome"]}, {telefone}: {e}')
                 with open('erros.csv', 'a', newline='', encoding='utf-8') as arquivo:
                     arquivo.write(f'{row["nome"]}, {telefone}\n')
-
 class DataHandler:
     def __init__(self, filepath):
         self.filepath = filepath
@@ -286,6 +286,8 @@ class DataHandler:
         df.columns = [col.strip() for col in df.columns]
         for col in df.columns:
             df[col] = df[col].apply(lambda x: str(x).strip() if isinstance(x, str) else x)
+        if 'telefone' not in df.columns:
+            df['telefone'] = ''
         return df
 
     def save_data(self, df):
